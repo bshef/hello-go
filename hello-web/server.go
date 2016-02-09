@@ -36,15 +36,15 @@ func setServerHeader(w http.ResponseWriter) {
 }
 
 //	Maps API handler functions to the API path, as specified in a mapping
-func mapAPIfunctions(mux *http.ServeMux, apiMap map[string]func(http.ResponseWriter, *http.Request)) {
+func mapAPIfunctions(router *http.ServeMux, apiMap map[string]func(http.ResponseWriter, *http.Request)) {
 	for path, apiFunction := range apiMap {
-		mux.HandleFunc(path, apiFunction)
+		router.HandleFunc(path, apiFunction)
 	}
 }
 
 //	Logic that occurs when server starts
-func startServer(port int, mux *http.ServeMux, apiMap map[string]func(http.ResponseWriter, *http.Request)) {
-	mapAPIfunctions(mux, apiMap)
+func startServer(port int, apiMap map[string]func(http.ResponseWriter, *http.Request)) {
+	mapAPIfunctions(http.NewServeMux(), apiMap)
 	http.ListenAndServe(":"+strconv.Itoa(port), nil)
 }
 
@@ -52,7 +52,7 @@ func startServer(port int, mux *http.ServeMux, apiMap map[string]func(http.Respo
 //	Server main entry point
 //
 func main() {
-	startServer(port, http.NewServeMux(), map[string]func(http.ResponseWriter, *http.Request){
+	startServer(port, map[string]func(http.ResponseWriter, *http.Request){
 		"/":       hello,
 		"/health": health,
 	})

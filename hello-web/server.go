@@ -3,7 +3,12 @@ package main
 import (
 	"io"
 	"net/http"
+	"strconv"
 )
+
+// Variables
+const port int = 8000
+var portString string = ":" + strconv.Itoa(port)
 
 func setServerHeader(w http.ResponseWriter) {
     w.Header().Set("Server", "Hello Go Web Server");
@@ -20,7 +25,8 @@ func health(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", hello)
-    http.HandleFunc("/health", health)
-	http.ListenAndServe(":8000", nil)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", hello)
+    mux.HandleFunc("/health", health)
+	http.ListenAndServe(portString, nil)
 }

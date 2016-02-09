@@ -1,4 +1,6 @@
-package main
+//	Package server provides logic to listen and serve content and faciliate
+//	a RESTful API.
+package server
 
 import (
 	"io"
@@ -6,21 +8,27 @@ import (
 	"strconv"
 )
 
-// CONSTANT Variables
+//
+//	CONSTANT Variables
+//
+
+//	port defines the port on which the server will listen and serve.
 const port int = 8000
+
+//	serverHeader defines the value of the "Server" header set on HTTP responses.
 const serverHeader string = "Hello Go Web Server"
 
 //
 //	API Handler Functions
 //
 
-//	Responds with "Hello, world!"
+//	hello responds with "Hello, world!"
 func hello(w http.ResponseWriter, req *http.Request) {
 	setServerHeader(w)
 	io.WriteString(w, "Hello, world!")
 }
 
-//	Responds with 200 OK
+//	health responds with 200 OK
 func health(w http.ResponseWriter, req *http.Request) {
 	setServerHeader(w)
 	w.WriteHeader(200)
@@ -30,21 +38,21 @@ func health(w http.ResponseWriter, req *http.Request) {
 //	Server functions
 //
 
-//	Sets the response header
+//	setServerHeader sets the response header.
 func setServerHeader(w http.ResponseWriter) {
 	w.Header().Set("Server", serverHeader)
 }
 
-//	Maps API handler functions to the API path, as specified in a mapping
-func mapAPIfunctions(router *http.ServeMux, apiMap map[string]func(http.ResponseWriter, *http.Request)) {
+//	mapAPIFunctions maps API handler functions to the API path, as specified in a mapping.
+func mapAPIFunctions(router *http.ServeMux, apiMap map[string]func(http.ResponseWriter, *http.Request)) {
 	for path, apiFunction := range apiMap {
 		router.HandleFunc(path, apiFunction)
 	}
 }
 
-//	Logic that occurs when server starts
+//	startServer defines logic that occurs when server starts.
 func startServer(port int, apiMap map[string]func(http.ResponseWriter, *http.Request)) {
-	mapAPIfunctions(http.NewServeMux(), apiMap)
+	mapAPIFunctions(http.NewServeMux(), apiMap)
 	http.ListenAndServe(":"+strconv.Itoa(port), nil)
 }
 

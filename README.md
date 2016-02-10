@@ -36,13 +36,13 @@ By convention, the Go directory structure should resemble the following:
 #### Linux and Mac OSX
 ```
 export GOROOT=$HOME/go
-export GOPATH=$HOME/go/src/github.com/golang/hello-go
+export GOPATH=$HOME/go
 export PATH=$PATH:$GOROOT/bin
 ```
 #### Windows
 ```
 SET GOROOT=C:\Go
-SET GOPATH=C:\Go\src\github.com\golang\hello-go
+SET GOPATH=C:\Go
 ```
 ( Note: The MSI installer should have added `C:\Go\bin` to the PATH environment variable )
 
@@ -55,10 +55,10 @@ In a command window, navigate to the `.../Go/src` directory, then execute the co
 go install github.com/golang/hello-go/hello
 ```
 The above command will put an executable named `hello` (or `hello.exe`) inside
-the `bin` directory under the `GOROOT`.
+the `bin` directory under the root `Go` directory.
 
 ## Run
 ### Linux and Mac OSX
-`$GOROOT/bin/hello`
+`$GOPATH/bin/hello`
 ### Windows
-`%GOROOT%\bin\hello`
+`%GOPATH%\bin\hello`

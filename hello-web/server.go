@@ -131,6 +131,7 @@ func main() {
 
 	startServer(port, map[string]func(http.ResponseWriter, *http.Request) *apiError{
 		"/":       hello,
+		"/hello":  hello,
 		"/health": health,
 	})
 }

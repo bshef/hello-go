@@ -74,7 +74,12 @@ inside the `bin` directory under the GOPATH directory.
 `%GOPATH%\bin\hello-web` or `hello` (if `%GOPATH%\bin` was added to the PATH)
 
 ## Test
-Visit `http://localhost:8000` in a modern browser.
+Visit `http://localhost:8000` in a modern browser to see static content served.
+
+Visit `http://localhost:8000/view/test` in a modern browser to see templated
+content being served.
+
+Enter the following commands to see a simple API in action:
 ```
 curl -i localhost:8000
 curl -i localhost:8000/health

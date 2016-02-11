@@ -74,6 +74,7 @@ inside the `bin` directory under the GOPATH directory.
 `%GOPATH%\bin\hello-web` or `hello` (if `%GOPATH%\bin` was added to the PATH)
 
 ## Test
+Visit `http://localhost:8000` in a modern browser.
 ```
 curl -i localhost:8000
 curl -i localhost:8000/health

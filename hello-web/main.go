@@ -44,14 +44,13 @@ type apiHandler func(http.ResponseWriter, *http.Request) *apiError
 
 //	hello responds with "Hello, world!"
 func hello(w http.ResponseWriter, req *http.Request) *apiError {
-	setServerHeader(w)
+	log.Debug("Writing Hello, World!")
 	io.WriteString(w, "Hello, world!")
 	return nil
 }
 
 //	health responds with 200 OK
 func health(w http.ResponseWriter, req *http.Request) *apiError {
-	setServerHeader(w)
 	w.WriteHeader(200)
 	return nil
 }
@@ -91,43 +90,42 @@ func initializeLogger() {
 	// log.Critical("crit")
 }
 
-//	ServeHTTP method calls the apiHandler function and displays the returned
-//	error (if any).
-func (apiHandlerFunction apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Debugf("Request: %s ... ", r.URL.Path)
-	if e := apiHandlerFunction(w, r); e != nil {
-		log.Errorf("%+v", e)
-		http.Error(w, e.Message, e.Code)
-	} else {
-		log.Debug("... Request received.")
-	}
-}
-
 //	setServerHeader sets the response header.
 func setServerHeader(w http.ResponseWriter) {
 	w.Header().Set("Server", serverHeader)
 }
 
 //	mapAPIFunctions maps API handler functions to the API path, as specified in a mapping.
-func mapAPIFunctions(apiMap map[string]func(http.ResponseWriter, *http.Request) *apiError) {
-	router := http.NewServeMux()
+func mapAPIFunctions(apiMap map[string]apiHandler) {
 	log.Debug("Mapping API functions ... ")
 	for path, apiFunction := range apiMap {
-		router.Handle(path, apiHandler(apiFunction))
+		http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+			log.Infof("Received request:\t%v", r.URL)
+			//	Set the server header for every response
+			setServerHeader(w)
+
+			//	Handle the request, report any error or success
+			if e := apiFunction(w, r); e != nil {
+				//	TODO - Actually log the error here
+				log.Error("Error!")
+				http.Error(w, e.Message, e.Code)
+			} else {
+				log.Info(" ... request handled.")
+			}
+		})
 	}
 	log.Debug(" ... API functions mapped.")
 }
 
 //	startServer defines logic that occurs when server starts.
-func startServer(port int, apiMap map[string]func(http.ResponseWriter, *http.Request) *apiError) {
+func startServer(port int, apiMap map[string]apiHandler) {
 	portString := ":" + strconv.Itoa(port)
-	log.Infof("Starting server (port %s)... ", portString)
+	log.Infof("Starting server (port %s) ... ", portString)
 	mapAPIFunctions(apiMap)
 	err := http.ListenAndServe(portString, nil)
 	if err != nil {
 		log.Critical("%v", err)
 	}
-	log.Info(" ... server started.")
 }
 
 //
@@ -135,8 +133,7 @@ func startServer(port int, apiMap map[string]func(http.ResponseWriter, *http.Req
 //
 func main() {
 	initializeLogger()
-	log.Debug("DEBUG")
-	startServer(port, map[string]func(http.ResponseWriter, *http.Request) *apiError{
+	startServer(port, map[string]apiHandler{
 		"/hello":  hello,
 		"/health": health,
 	})

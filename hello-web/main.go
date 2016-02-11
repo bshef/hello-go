@@ -25,32 +25,41 @@ const serverHeader string = "Hello Go Web Server"
 var log = logging.MustGetLogger("main")
 
 //
-//	Type definitions
+//	Type definitions and constructors
 //
 
-//	Type apiError contains important details about an API error.
-type apiError struct {
-	Error   error
-	Message string
-	Code    int
-}
-
-//	Type apiHandler handles an HTTP request and can return an error if necessary.
-type apiHandler func(http.ResponseWriter, *http.Request) *apiError
+//	Type apiHandler is the standard function for handling API requests
+type apiHandler func(http.ResponseWriter, *http.Request) error
 
 //
 //	API Handler Functions
 //
 
+//	handleRoute not only maps a function to an API route,
+//	but also defines standard behavior for every API request.
+func handleRoute(route string, handler apiHandler) {
+	handlerFunction := func(w http.ResponseWriter, r *http.Request) {
+		log.Infof("API Request:\t%s", r.URL.String())
+		setServerHeader(w)
+		if err := handler(w, r); err != nil {
+			log.Error(err.Error())
+			http.Error(w, err.Error(), 500)
+			return
+		}
+	}
+	http.HandleFunc(route, handlerFunction)
+}
+
 //	hello responds with "Hello, world!"
-func hello(w http.ResponseWriter, req *http.Request) *apiError {
-	log.Debug("Writing Hello, World!")
+func hello(w http.ResponseWriter, r *http.Request) error {
+	setServerHeader(w)
 	io.WriteString(w, "Hello, world!")
 	return nil
 }
 
 //	health responds with 200 OK
-func health(w http.ResponseWriter, req *http.Request) *apiError {
+func health(w http.ResponseWriter, r *http.Request) error {
+	setServerHeader(w)
 	w.WriteHeader(200)
 	return nil
 }
@@ -82,50 +91,35 @@ func initializeLogger() {
 	logging.SetBackend(backend1Leveled, backend2Formatter)
 
 	//	log usage:
-	// log.Debug("debug")
-	// log.Info("info")
-	// log.Notice("notice")
-	// log.Warning("warning")
-	// log.Error("err")
-	// log.Critical("crit")
+	//	log.Debug("debug"), log.Info("info"), log.Notice("notice")
+	//	log.Warning("warning"), log.Error("err"), log.Critical("crit")
+	return
 }
 
 //	setServerHeader sets the response header.
 func setServerHeader(w http.ResponseWriter) {
 	w.Header().Set("Server", serverHeader)
+	return
 }
 
-//	mapAPIFunctions maps API handler functions to the API path, as specified in a mapping.
-func mapAPIFunctions(apiMap map[string]apiHandler) {
-	log.Debug("Mapping API functions ... ")
-	for path, apiFunction := range apiMap {
-		http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-			log.Infof("Received request:\t%v", r.URL)
-			//	Set the server header for every response
-			setServerHeader(w)
-
-			//	Handle the request, report any error or success
-			if e := apiFunction(w, r); e != nil {
-				//	TODO - Actually log the error here
-				log.Error("Error!")
-				http.Error(w, e.Message, e.Code)
-			} else {
-				log.Info(" ... request handled.")
-			}
-		})
-	}
-	log.Debug(" ... API functions mapped.")
+//	setupRoutes sets up routes and paths handled by the server.
+func setupRoutes() {
+	handleRoute("/hello", hello)
+	handleRoute("/health", health)
+	return
 }
 
 //	startServer defines logic that occurs when server starts.
-func startServer(port int, apiMap map[string]apiHandler) {
+func startServer(port int) {
 	portString := ":" + strconv.Itoa(port)
 	log.Infof("Starting server (port %s) ... ", portString)
-	mapAPIFunctions(apiMap)
+
+	//	Actually start the server
 	err := http.ListenAndServe(portString, nil)
 	if err != nil {
 		log.Critical("%v", err)
 	}
+	return
 }
 
 //
@@ -133,8 +127,6 @@ func startServer(port int, apiMap map[string]apiHandler) {
 //
 func main() {
 	initializeLogger()
-	startServer(port, map[string]apiHandler{
-		"/hello":  hello,
-		"/health": health,
-	})
+	setupRoutes()
+	startServer(port)
 }

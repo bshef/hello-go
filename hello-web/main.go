@@ -1,14 +1,14 @@
 // Package server provides logic to listen and serve content and faciliate
 // a RESTful API.
-package server
+package main
 
 import (
 	"io"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/op/go-logging"
 )
 
 //
@@ -21,13 +21,8 @@ const port int = 8000
 //	serverHeader defines the value of the "Server" header set on HTTP responses.
 const serverHeader string = "Hello Go Web Server"
 
-//	Logger variables
-var (
-	Trace   *log.Logger
-	Info    *log.Logger
-	Warning *log.Logger
-	Error   *log.Logger
-)
+//	log is the global logging object
+var log = logging.MustGetLogger("main")
 
 //
 //	Type definitions
@@ -65,43 +60,45 @@ func health(w http.ResponseWriter, req *http.Request) *apiError {
 //	Server functions
 //
 
-//	initializeLogger sets up the logging capabilities of the application.
-func initializeLogger(
-	traceHandle io.Writer,
-	infoHandle io.Writer,
-	warningHandle io.Writer,
-	errorHandle io.Writer) {
-	Trace = log.New(traceHandle,
-		"TRACE: ",
-		log.Ldate|log.Ltime|log.Lshortfile)
+func initializeLogger() {
+	//	format string which defines the log output format.
+	var format = logging.MustStringFormatter(
+		`%{color}%{time:15:04:05.000} [%{level:.10s}] %{shortfunc} %{color:reset} %{message}`,
+	)
 
-	Info = log.New(infoHandle,
-		"INFO: ",
-		log.Ldate|log.Ltime|log.Lshortfile)
+	// 	Create two backend for os.Stderr.
+	backend1 := logging.NewLogBackend(os.Stderr, "", 0)
+	backend2 := logging.NewLogBackend(os.Stderr, "", 0)
 
-	Warning = log.New(warningHandle,
-		"WARNING: ",
-		log.Ldate|log.Ltime|log.Lshortfile)
+	//	For messages written to backend2 we want to add some additional
+	// 	information to the output, including the used log level and the name of
+	// 	the function.
+	backend2Formatter := logging.NewBackendFormatter(backend2, format)
 
-	Error = log.New(errorHandle,
-		"ERROR: ",
-		log.Ldate|log.Ltime|log.Lshortfile)
+	//	Only errors and more severe messages should be sent to backend1
+	backend1Leveled := logging.AddModuleLevel(backend1)
+	backend1Leveled.SetLevel(logging.ERROR, "")
 
-	//	Usage:
-	// Trace.Println("I have something standard to say")
-	// Info.Println("Special Information")
-	// Warning.Println("There is something you need to know about")
-	// Error.Println("Something has failed")
+	//	Set the backends to be used.
+	logging.SetBackend(backend1Leveled, backend2Formatter)
+
+	//	log usage:
+	// log.Debug("debug")
+	// log.Info("info")
+	// log.Notice("notice")
+	// log.Warning("warning")
+	// log.Error("err")
+	// log.Critical("crit")
 }
 
 //	ServeHTTP method calls the apiHandler function and displays the returned
 //	error (if any).
 func (fn apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if e := fn(w, r); e != nil {
-		Error.Println(e.Error)
+		// Error.Println(e.Error)
 		http.Error(w, e.Message, e.Code)
 	} else {
-		Info.Println("Request received ... ")
+		// Info.Println("Request received ... ")
 	}
 }
 
@@ -111,23 +108,32 @@ func setServerHeader(w http.ResponseWriter) {
 }
 
 //	mapAPIFunctions maps API handler functions to the API path, as specified in a mapping.
-func mapAPIFunctions(router *http.ServeMux, apiMap map[string]func(http.ResponseWriter, *http.Request) *apiError) {
+func mapAPIFunctions(apiMap map[string]func(http.ResponseWriter, *http.Request) *apiError) {
+	router := http.NewServeMux()
+	log.Debug("Mapping API functions ... ")
 	for path, apiFunction := range apiMap {
 		router.Handle(path, apiHandler(apiFunction))
 	}
+	log.Debug(" ... API functions mapped.")
 }
 
 //	startServer defines logic that occurs when server starts.
 func startServer(port int, apiMap map[string]func(http.ResponseWriter, *http.Request) *apiError) {
-	mapAPIFunctions(http.NewServeMux(), apiMap)
-	http.ListenAndServe(":"+strconv.Itoa(port), nil)
+	portString := ":" + strconv.Itoa(port)
+	log.Infof("Starting server (port %s)... ", portString)
+	mapAPIFunctions(apiMap)
+	err := http.ListenAndServe(portString, nil)
+	if err != nil {
+		log.Critical("%v", err)
+	}
+	log.Info(" ... server started.")
 }
 
 //
 //	Server main entry point
 //
 func main() {
-	initializeLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
+	initializeLogger()
 
 	startServer(port, map[string]func(http.ResponseWriter, *http.Request) *apiError{
 		"/":       hello,

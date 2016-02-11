@@ -1,13 +1,6 @@
 # hello-go
 Experimentations with GoLang (https://golang.org/)
 
-## Index
-- [Setup](#setup)
-- [Build](#build)
-- [Run](#run)
-
----
-
 ## Setup
 ### Download and Install the Go Programming Language
 https://golang.org/dl/

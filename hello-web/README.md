@@ -19,30 +19,40 @@ https://golang.org/dl/
 ### Set Up Directory Structure
 By convention, the Go directory structure should resemble the following:
 ```
-.../Go/                                             # "GOROOT"
+.../Go/                                         # "GOROOT" (deprecated term)
     |
-    -- /bin/                                        # Executables stored here
+    -- /bin/                                    # Go executables stored here
     |
-    -- /src/                                        # Projects stored here
+    -- /src/                                    # Go Source stored here
+    |
+    -- /pkg/                                    # Third party packages stored here
+```
+
+Create a separate working directory, which should resemble:
+```
+.../gowork/                                     # "GOPATH"
+    |
+    -- /bin/                                    # Executables stored here
+    |
+    -- /src/                                    # Projects stored here
     |   |
-    |   -- /github.com/golang/hello-go              # Workspace and GitHub project
+    |   -- /github.com/bshef/hello-go           # GitHub project
     |                           |
-    |                           -- /hello-web/      # Project source files stored here
+    |                           -- /hello-web/  # Project source files stored here
     |
-    -- /pkg/                                        # Third party packages stored here
+    -- /pkg/                                    # Third party packages stored here
 ```
 
 ### Set Environment Variables
 #### Linux and Mac OSX
 ```
-export GOROOT=$HOME/go
-export GOPATH=$HOME/go
+export GOPATH=$HOME/gowork
 export PATH=$PATH:$GOROOT/bin
 ```
 #### Windows
 ```
-SET GOROOT=C:\Go
-SET GOPATH=C:\Go
+SET GOPATH=C:\gowork
+SET PATH=%PATH%;C:\gowork\bin
 ```
 ( Note: The MSI installer should have added `C:\Go\bin` to the PATH environment variable )
 
@@ -50,18 +60,18 @@ SET GOPATH=C:\Go
 https://golang.org/doc/install
 
 ## Build
-In a command window, navigate to the `.../Go/src` directory, then execute the command:
+Execute the command:
 ```
-go install github.com/golang/hello-go/hello-web
+go install github.com/bshef/hello-go/hello-web
 ```
-The above command will put an executable named `hello-web` (or `hello-web.exe`) inside
-the `bin` directory under the root `Go` directory.
+The above command will put an executable named `hello-web` (or `hello-web.exe`)
+inside the `bin` directory under the GOPATH directory.
 
 ## Run
 ### Linux and Mac OSX
 `$GOPATH/bin/hello-web`
 ### Windows
-`%GOPATH%\bin\hello-web`
+`%GOPATH%\bin\hello-web` or `hello` (if `%GOPATH%\bin` was added to the PATH)
 
 ## Test
 ```

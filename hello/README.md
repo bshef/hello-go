@@ -58,3 +58,17 @@ SET PATH=%PATH%;C:\gowork\bin
 
 ### For more information setting up GoLang:
 https://golang.org/doc/install
+
+## Build
+Execute the command:
+```
+go install github.com/bshef/hello-go/hello
+```
+The above command will put an executable named `hello` (or `hello.exe`) inside
+the `bin` directory under the GOPATH directory.
+
+## Run
+### Linux and Mac OSX
+`$GOPATH/bin/hello`
+### Windows
+`%GOPATH%\bin\hello` or `hello` (if `%GOPATH%\bin` was added to the PATH)

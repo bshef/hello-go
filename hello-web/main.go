@@ -93,12 +93,13 @@ func initializeLogger() {
 
 //	ServeHTTP method calls the apiHandler function and displays the returned
 //	error (if any).
-func (fn apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if e := fn(w, r); e != nil {
-		// Error.Println(e.Error)
+func (apiHandlerFunction apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Debugf("Request: %s ... ", r.URL.Path)
+	if e := apiHandlerFunction(w, r); e != nil {
+		log.Errorf("%+v", e)
 		http.Error(w, e.Message, e.Code)
 	} else {
-		// Info.Println("Request received ... ")
+		log.Debug("... Request received.")
 	}
 }
 
@@ -134,9 +135,8 @@ func startServer(port int, apiMap map[string]func(http.ResponseWriter, *http.Req
 //
 func main() {
 	initializeLogger()
-
+	log.Debug("DEBUG")
 	startServer(port, map[string]func(http.ResponseWriter, *http.Request) *apiError{
-		"/":       hello,
 		"/hello":  hello,
 		"/health": health,
 	})

@@ -102,8 +102,17 @@ func setServerHeader(w http.ResponseWriter) {
 	return
 }
 
+//	serveStaticContent serves static content based on the requested path.
+func serveStaticContent() {
+	http.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("./public"))))
+}
+
 //	setupRoutes sets up routes and paths handled by the server.
 func setupRoutes() {
+	//	Serve static content from /public directory
+	serveStaticContent()
+
+	//	Handle basic API routes
 	handleRoute("/hello", hello)
 	handleRoute("/health", health)
 	return

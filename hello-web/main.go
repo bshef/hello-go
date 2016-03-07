@@ -3,13 +3,14 @@
 package main
 
 import (
+	"encoding/json"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"regexp"
 	"strconv"
-	"text/template"
 
 	"github.com/op/go-logging"
 )
@@ -31,7 +32,7 @@ var log = logging.MustGetLogger("main")
 var templates = template.Must(template.ParseFiles("./view/view.html"))
 
 //	validPath is a regex pattern used to mitigate potential XSS risks.
-var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
+var validPath = regexp.MustCompile("^/(edit|save|view|json)/([a-zA-Z0-9]+)$")
 
 //
 //	Type definitions and constructors
@@ -42,8 +43,8 @@ type apiHandler func(http.ResponseWriter, *http.Request) error
 
 // Page is a struct containing information relevant to each page.
 type Page struct {
-	Title string
-	Body  []byte
+	Title string `json:"Title"`
+	Body  string `json:"Body"`
 }
 
 //
@@ -83,20 +84,26 @@ func health(w http.ResponseWriter, r *http.Request) error {
 //	HTML templating functions
 //
 
-//	save takes as its receiver a pointer to Page, and saves Page.Body to a text file.
-func (p *Page) save() error {
-	filename := p.Title + ".txt"
-	return ioutil.WriteFile(filename, p.Body, 0600)
-}
-
-//	loadPage reads the file's contents and returns a constructed Page literal
-func loadPage(path string, title string) (*Page, error) {
-	filename := path + ".txt"
-	body, err := ioutil.ReadFile(filename)
-	if err != nil {
+//	convertJSONtoPage takes raw JSON data and unmarshalls it into a Page struct.
+func convertJSONtoPage(rawJSON []byte) (*Page, error) {
+	var p Page
+	if err := json.Unmarshal(rawJSON, &p); err != nil {
+		log.Error(err.Error())
 		return nil, err
 	}
-	return &Page{Title: title, Body: body}, nil
+	return &p, nil
+}
+
+//	loadPageJson parses a JSON file and returns a constructed Page literal.
+func loadPageJSON(path string) (*Page, error) {
+	filename := path + ".json"
+	rawJSON, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+
+	return convertJSONtoPage(rawJSON)
 }
 
 //	renderTemplate renders an HTML template file with the specified Page data.
@@ -110,7 +117,7 @@ func renderTemplate(w http.ResponseWriter, templateFile string, page *Page) {
 
 //	viewHandler handles URLs prefixed with "/view/"
 func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
-	page, err := loadPage("./view/"+title, title)
+	page, err := loadPageJSON("./view/" + title)
 	if err != nil {
 		log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
